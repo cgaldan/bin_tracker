@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import '../models/bin_model.dart';
 
 class BinCreationScreen extends StatefulWidget {
+  final BinItem? bin;
+
+  const BinCreationScreen({Key? key, this.bin}) : super(key: key);
   @override
-  _BinCreationScreenState createState() => _BinCreationScreenState();
+  State<BinCreationScreen> createState() => _BinCreationScreenState();
 }
 
 class _BinCreationScreenState extends State<BinCreationScreen> {
@@ -13,6 +16,43 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
   final _locCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  DateTime _startDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.bin != null) {
+      _idCtrl.text = widget.bin!.id;
+      _locCtrl.text = widget.bin!.location;
+      _nameCtrl.text = widget.bin!.contactName;
+      _phoneCtrl.text = widget.bin!.contactPhone;
+      _startDate = widget.bin!.startDate;
+    }
+  }
+
+  @override
+  void dispose() {
+    _idCtrl.dispose();
+    _locCtrl.dispose();
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  void _saveBin() {
+    if (_formKey.currentState?.validate() ?? false) {
+      final newBin = BinItem(
+        id: _idCtrl.text,
+        location: _locCtrl.text,
+        contactName: _nameCtrl.text,
+        contactPhone: _phoneCtrl.text,
+        startDate: _startDate,
+        endDate: _startDate.add(const Duration(days: 10)), // Assuming endDate is 10 days after startDate
+      );
+
+      Navigator.pop(context, newBin);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,19 +93,8 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
+                onPressed: _saveBin,
                 child: Text('Create Bin'),
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    final newBin = BinItem(
-                      id: _idCtrl.text,
-                      location: _locCtrl.text,
-                      contactName: _nameCtrl.text,
-                      contactPhone: _phoneCtrl.text,
-                      startDate: DateTime.now(),
-                    );
-                    Navigator.of(context).pop(newBin);
-                  }
-                },
               ),
             ],
           ),

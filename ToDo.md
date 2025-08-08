@@ -1,4 +1,5 @@
 # Features
-- Screen for bin details
+- Screen for bin details (With time details)
 - Sorting based on Time
-- Add Hive for local storing
+- Days counting after expiring
+- Time also showing in substring

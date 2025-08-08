@@ -1,9 +1,26 @@
+import 'package:hive/hive.dart';
+
+part 'bin_model.g.dart';
+
+@HiveType(typeId: 0)
 class BinItem {
+  @HiveField(0)
   final String id;
+
+  @HiveField(1)
   final String location;
+  
+  @HiveField(2)
   final String contactName;
+  
+  @HiveField(3)
   final String contactPhone;
+  
+  @HiveField(4)
   final DateTime startDate;
+
+  @HiveField(5)
+  final DateTime endDate;
 
   BinItem({
     required this.id,
@@ -11,9 +28,10 @@ class BinItem {
     required this.contactName,
     required this.contactPhone,
     required this.startDate,
+    required this.endDate,
   });
 
-  DateTime get expiresAt => startDate.add(const Duration(seconds: 30));
+  DateTime get expiresAt => startDate.add(const Duration(days: 10));
 
   int get daysLeft {
     final now = DateTime.now();
