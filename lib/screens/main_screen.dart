@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:bin_tracker/models/bin_model.dart';
 import 'package:bin_tracker/screens/bin_creation_screen.dart';
+import 'bin_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -56,6 +57,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: Text(bin.isExpired
                       ? 'Expired on ${bin.expiresAt.toLocal()}'
                       : '${bin.daysLeft} day${bin.daysLeft == 1 ? '' : 's'} left'),
+                  onTap: () async {
+                    final shouldRefresh = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BinDetailScreen(
+                          bin: bin,
+                          hiveKey: key,
+                        ),
+                      ),
+                    );
+
+                    if (shouldRefresh == true) {
+                      _loadBins();
+                    }
+                  },
                   trailing: 
                   Row(
                     mainAxisSize: MainAxisSize.min,
