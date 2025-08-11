@@ -46,10 +46,26 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
     String _formatDuration(Duration duration) {
         final isNegative = duration.isNegative;
         final dur = duration.abs();
-        final hours = dur.inHours.remainder(100000).toString().padLeft(2, '0');
+        if (dur.inDays > 0) {
+            return '${dur.inDays} day${dur.inDays == 1 ? '' : 's'} and'
+                ' ${dur.inHours.remainder(24).toString().padLeft(2, '0')}:'
+                '${dur.inMinutes.remainder(60).toString().padLeft(2, '0')}:'
+                '${dur.inSeconds.remainder(60).toString().padLeft(2, '0')}';
+        }
+        if (dur.inHours > 0) {
+            return '${dur.inHours} hour${dur.inHours == 1 ? '' : 's'}'
+                ' ${dur.inMinutes.remainder(60).toString().padLeft(2, '0')}:'
+                '${dur.inSeconds.remainder(60).toString().padLeft(2, '0')}';
+        }
         final minutes = dur.inMinutes.remainder(60).toString().padLeft(2, '0');
         final seconds = dur.inSeconds.remainder(60).toString().padLeft(2, '0');
-        return '${isNegative ? '-' : ''}$hours:$minutes:$seconds';
+        return '${isNegative ? '-' : ''}:$minutes:$seconds';
+    }
+
+    int _extraDays() {
+        final now = DateTime.now();
+        final extra = _bin.expiresAt.difference(now).inDays;
+        return -extra;
     }
 
     Future<void> _onEdit() async {
@@ -107,9 +123,14 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
     @override
     Widget build(BuildContext context) {
         final expired = _remaining.isNegative;
+        final extraDays = _extraDays() > 0;
         final statusText = expired 
             ? 'Expired ${_formatDuration(_remaining)} ago'
             : '${_formatDuration(_remaining)} left';
+        
+        final extraDaysText = extraDays 
+            ? 'Extra days: ${_extraDays()}'
+            : 'No extra days left';
 
         return Scaffold(
             appBar: AppBar(
@@ -153,6 +174,13 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
                                             color: expired ? Colors.red : Colors.green,
                                         )),
                                     const SizedBox(height: 16),
+                                    Text(extraDaysText,
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: extraDays ? Colors.green.shade800 : Colors.black,
+                                            )),
+                                    const SizedBox(height: 300),
                                     ElevatedButton.icon(
                                         icon: const Icon(Icons.edit),
                                         label: const Text('Edit Bin'),

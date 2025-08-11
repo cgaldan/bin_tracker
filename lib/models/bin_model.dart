@@ -31,7 +31,7 @@ class BinItem {
     required this.endDate,
   });
 
-  DateTime get expiresAt => startDate.add(const Duration(days: 10));
+  DateTime get expiresAt => startDate.add(const Duration(hours: 24));
 
   int get daysLeft {
     final now = DateTime.now();
