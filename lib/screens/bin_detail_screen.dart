@@ -155,9 +155,9 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
 
                         Text('ID: ${_bin.id}', style: Theme.of(context).textTheme.titleLarge),
                         const SizedBox(height: 8),
-                        Text('Location: ${_bin.location}'),
+                        Text(_bin.location.isEmpty ? 'Not assigned' : 'Location: ${_bin.location}'),
                         const SizedBox(height: 8),
-                        Text('Contact: ${_bin.contactName} (${_bin.contactPhone})'),
+                        Text(_bin.contactName.isEmpty ? 'Not assigned' : 'Contact: ${_bin.contactName} (${_bin.contactPhone})'),
                         const SizedBox(height: 8),
                         Text('Placed: ${_bin.startDate.toLocal()}'),
                         const SizedBox(height: 8),

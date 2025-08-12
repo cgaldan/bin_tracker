@@ -1,5 +1,6 @@
 # Features
-- Screen for bin details (With time details)
-- Sorting based on Time
-- Days counting after expiring
-- Time also showing in substring
+- Search bar
+- Sorting based on Time and other Sorting options
+- Make counter start whenever user wants
+
+- Time also showing in substring **(optional)**

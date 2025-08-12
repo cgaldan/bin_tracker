@@ -39,17 +39,42 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
     super.dispose();
   }
 
-  void _saveBin() {
+  void _saveBin() async {
     if (_formKey.currentState?.validate() ?? false) {
       final newBin = BinItem(
         id: _idCtrl.text,
-        location: _locCtrl.text,
-        contactName: _nameCtrl.text,
-        contactPhone: _phoneCtrl.text,
+        location: _locCtrl.text.isEmpty ? "" : _locCtrl.text,
+        contactName: _nameCtrl.text.isEmpty ? "" : _nameCtrl.text,
+        contactPhone: _phoneCtrl.text.isEmpty ? "" : _phoneCtrl.text,
         startDate: _startDate,
-        endDate: _startDate.add(const Duration(days: 10)), // Assuming endDate is 10 days after startDate
+        endDate: _startDate.add(const Duration(days: 10)),
       );
 
+      if (widget.bin != null) {
+        final ok = await showDialog(
+          context: context,
+          builder: (c) => AlertDialog(
+            title: Text('Confirm Changes'),
+            content: Text('Are you sure you want to save changes to this bin?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c, false),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(c, true),
+                child: Text('Yes'),
+              ),
+            ],
+          ),
+        );
+
+        if (ok != true) {
+          return;
+        }
+      }
+
+      if (!mounted) return;
       Navigator.pop(context, newBin);
     }
   }
@@ -58,7 +83,7 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add A Bin'),
+        title: Text(widget.bin != null ? 'Edit Bin' : 'Add A Bin'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -74,27 +99,22 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
               ),
               TextFormField(
                 controller: _locCtrl,
-                decoration: InputDecoration(labelText: 'Location'),
-                validator: (value) =>
-                  (value == null || value.isEmpty) ? 'Please enter a location' : null,
+                decoration: InputDecoration(labelText: 'Location (Optional)'),
+
               ),
               TextFormField(
                 controller: _nameCtrl,
-                decoration: InputDecoration(labelText: 'Name'),
-                validator: (value) =>
-                  (value == null || value.isEmpty) ? 'Please enter a name' : null,
+                decoration: InputDecoration(labelText: 'Name (Optional)'),
               ),
               TextFormField(
                 controller: _phoneCtrl,
-                decoration: InputDecoration(labelText: 'Phone Number'),
-                validator: (value) =>
-                  (value == null || value.isEmpty) ? 'Please enter a phone number' : null,
+                decoration: InputDecoration(labelText: 'Phone Number (Optional)'),
                 keyboardType: TextInputType.phone,
               ),
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _saveBin,
-                child: Text('Create Bin'),
+                child: Text(widget.bin != null ? 'Save Changes' : 'Create Bin'),
               ),
             ],
           ),
