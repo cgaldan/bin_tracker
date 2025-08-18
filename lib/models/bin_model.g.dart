@@ -18,30 +18,24 @@ class BinItemAdapter extends TypeAdapter<BinItem> {
     };
     return BinItem(
       id: fields[0] as String,
-      location: fields[1] as String,
-      contactName: fields[2] as String,
-      contactPhone: fields[3] as String,
-      startDate: fields[4] as DateTime,
-      endDate: fields[5] as DateTime,
+      location: fields[1] as String?,
+      currentRentalKey: fields[2] as int?,
+      rentalHistory: (fields[3] as List?)?.cast<int>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, BinItem obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.location)
       ..writeByte(2)
-      ..write(obj.contactName)
+      ..write(obj.currentRentalKey)
       ..writeByte(3)
-      ..write(obj.contactPhone)
-      ..writeByte(4)
-      ..write(obj.startDate)
-      ..writeByte(5)
-      ..write(obj.endDate);
+      ..write(obj.rentalHistory);
   }
 
   @override

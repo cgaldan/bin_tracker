@@ -3,8 +3,10 @@ import '../models/bin_model.dart';
 
 class BinCreationScreen extends StatefulWidget {
   final BinItem? bin;
+  final int? binKey;
 
-  const BinCreationScreen({Key? key, this.bin}) : super(key: key);
+  const BinCreationScreen({Key? key, this.bin, this.binKey}) : super(key: key);
+
   @override
   State<BinCreationScreen> createState() => _BinCreationScreenState();
 }
@@ -14,19 +16,14 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
   
   final _idCtrl = TextEditingController();
   final _locCtrl = TextEditingController();
-  final _nameCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
-  DateTime _startDate = DateTime.now();
+
 
   @override
   void initState() {
     super.initState();
     if (widget.bin != null) {
-      _idCtrl.text = widget.bin!.id;
-      _locCtrl.text = widget.bin!.location;
-      _nameCtrl.text = widget.bin!.contactName;
-      _phoneCtrl.text = widget.bin!.contactPhone;
-      _startDate = widget.bin!.startDate;
+      _idCtrl.text = TextEditingController(text: widget.bin?.id ?? "").text;
+      _locCtrl.text = TextEditingController(text: widget.bin?.location ?? "").text;
     }
   }
 
@@ -34,56 +31,41 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
   void dispose() {
     _idCtrl.dispose();
     _locCtrl.dispose();
-    _nameCtrl.dispose();
-    _phoneCtrl.dispose();
     super.dispose();
   }
 
   void _saveBin() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final newBin = BinItem(
-        id: _idCtrl.text,
-        location: _locCtrl.text.isEmpty ? "" : _locCtrl.text,
-        contactName: _nameCtrl.text.isEmpty ? "" : _nameCtrl.text,
-        contactPhone: _phoneCtrl.text.isEmpty ? "" : _phoneCtrl.text,
-        startDate: _startDate,
-        endDate: _startDate.add(const Duration(days: 10)),
-      );
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    final idText = _idCtrl.text.trim();
+    final locationText = _locCtrl.text.trim();
+
+      BinItem result;
       if (widget.bin != null) {
-        final ok = await showDialog(
-          context: context,
-          builder: (c) => AlertDialog(
-            title: Text('Confirm Changes'),
-            content: Text('Are you sure you want to save changes to this bin?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(c, false),
-                child: Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(c, true),
-                child: Text('Yes'),
-              ),
-            ],
-          ),
+        result = widget.bin!.copyWith(
+          id: idText,
+          location: locationText.isNotEmpty ? locationText : null,
         );
-
-        if (ok != true) {
-          return;
-        }
+      } else {
+        result = BinItem(
+          id: idText,
+          location: locationText.isNotEmpty ? locationText : null,
+          currentRentalKey: null,
+          rentalHistory: [],
+        );
       }
 
       if (!mounted) return;
-      Navigator.pop(context, newBin);
+      Navigator.pop(context, result);
     }
-  }
+  
 
   @override
   Widget build(BuildContext context) {
+    final isEdit = widget.bin != null;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.bin != null ? 'Edit Bin' : 'Add A Bin'),
+        title: Text(isEdit ? 'Edit Bin' : 'Create Bin'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -93,31 +75,41 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
             children: [
               TextFormField(
                 controller: _idCtrl,
-                decoration: InputDecoration(labelText: 'Bin ID'),
+                decoration: InputDecoration(
+                  labelText: 'Bin ID',
+                  hintText: 'e.g. B123',
+                  ),
                 validator: (value) =>
                   (value == null || value.isEmpty) ? 'Please enter a bin ID' : null,
               ),
+              const SizedBox(height: 12),
+
               TextFormField(
                 controller: _locCtrl,
-                decoration: InputDecoration(labelText: 'Location (Optional)'),
+                decoration: InputDecoration(
+                  labelText: 'Location (Optional)',
+                  hintText: 'e.g. Ikarou 88',
+                  ),
 
               ),
-              TextFormField(
-                controller: _nameCtrl,
-                decoration: InputDecoration(labelText: 'Name (Optional)'),
-              ),
-              TextFormField(
-                controller: _phoneCtrl,
-                decoration: InputDecoration(labelText: 'Phone Number (Optional)'),
-                keyboardType: TextInputType.phone,
-              ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
               ElevatedButton(
                 onPressed: _saveBin,
-                child: Text(widget.bin != null ? 'Save Changes' : 'Create Bin'),
+                child: Text(isEdit ? 'Save Changes' : 'Create Bin'),
               ),
+
+                ],
+              ),  
             ],
-          ),
+          ),          
         ),
       ),
     );

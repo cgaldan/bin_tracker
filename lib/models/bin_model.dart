@@ -8,38 +8,32 @@ class BinItem {
   final String id;
 
   @HiveField(1)
-  final String location;
+  final String? location;
   
   @HiveField(2)
-  final String contactName;
+  final int? currentRentalKey;
   
   @HiveField(3)
-  final String contactPhone;
-  
-  @HiveField(4)
-  final DateTime startDate;
-
-  @HiveField(5)
-  final DateTime endDate;
+  final List<int>? rentalHistory;
 
   BinItem({
     required this.id,
-    required this.location,
-    required this.contactName,
-    required this.contactPhone,
-    required this.startDate,
-    required this.endDate,
+    this.location,
+    this.currentRentalKey,
+    this.rentalHistory,
   });
 
-  DateTime get expiresAt => startDate.add(const Duration(days: 10));
-
-  int get daysLeft {
-    final now = DateTime.now();
-    return expiresAt.difference(now).inDays;
-  }
-
-  bool get isExpired {
-    final now = DateTime.now();
-    return now.isAfter(expiresAt);
+  BinItem copyWith({
+    String? id,
+    String? location,
+    int? currentRentalKey,
+    List<int>? rentalHistory,
+  }) {
+    return BinItem(
+      id: id ?? this.id,
+      location: location ?? this.location,
+      currentRentalKey: currentRentalKey ?? this.currentRentalKey,
+      rentalHistory: rentalHistory ?? this.rentalHistory,
+    );
   }
 }

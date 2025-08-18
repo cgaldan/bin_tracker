@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import '../models/bin_model.dart';
 import 'bin_creation_screen.dart';
+import '../models/rental_record.dart';
+import '../utils/helpers.dart';
 
 class BinDetailScreen extends StatefulWidget{
     final BinItem bin;
@@ -19,80 +21,123 @@ class BinDetailScreen extends StatefulWidget{
 }
 
 class _BinDetailScreenState extends State<BinDetailScreen> {
-    late Box<BinItem> binBox;
+    late Box<BinItem> binsBox;
+    late Box<RentalRecord> rentalsBox;
+
     late BinItem _bin;
+    RentalRecord? _currentRental;
     Timer? _timer;
-    Duration _remaining = Duration.zero;
+    int _secondsLeft = 0;
 
     @override
     void initState() {
         super.initState();
-        binBox = Hive.box<BinItem>('bins');
-        _bin = widget.bin;
+        binsBox = Hive.box<BinItem>('bins');
+        rentalsBox = Hive.box<RentalRecord>('rentals');
+        _loadData();
+    }
+
+    void _loadData() {
+        _bin = binsBox.get(widget.hiveKey) ?? widget.bin;
+
+        if (_bin.currentRentalKey != null) {
+            _currentRental = rentalsBox.get(_bin.currentRentalKey);
+        } else {
+            _currentRental = null;
+        }
+
         _updateRemainingTime();
-        _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-            _updateRemainingTime();
-        });
+        // _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        //     _updateRemainingTime();
+        // });
     }
 
     void _updateRemainingTime() {
-        final now = DateTime.now();
-        final rem = _bin.expiresAt.difference(now);
+      _timer?.cancel();
+
+      if (_currentRental == null) {
+          setState(() {
+            _secondsLeft = 0;
+          });
+          return;
+      }
+
+      _secondsLeft = _currentRental!.secondsLeft();
+
+      if (_currentRental!.state == RentalState.active && !_currentRental!.isExpired) {
+          _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+              _tick();
+          });
+      } else {
+        setState(() {});
+        // final now = DateTime.now();
+        // final rem = _bin.expiresAt.difference(now);
+        // setState(() {
+        //     _remaining = rem;
+        // });
+      }
+    }
+
+    void _tick() {
+        if (!mounted) return;
+        final seconds = _currentRental?.secondsLeft() ?? 0;
         setState(() {
-            _remaining = rem;
+            _secondsLeft = seconds;
         });
-    }
-
-    String _formatDuration(Duration duration) {
-        final isNegative = duration.isNegative;
-        final dur = duration.abs();
-        if (dur.inDays > 0) {
-            return '${dur.inDays} day${dur.inDays == 1 ? '' : 's'} and'
-                ' ${dur.inHours.remainder(24).toString().padLeft(2, '0')}:'
-                '${dur.inMinutes.remainder(60).toString().padLeft(2, '0')}:'
-                '${dur.inSeconds.remainder(60).toString().padLeft(2, '0')}';
+        // if rental just expired while active, stop timer (we leave state as active but expired)
+        if (_currentRental != null && _currentRental!.state == RentalState.active && _currentRental!.secondsLeft() <= 0) {
+            _timer?.cancel();
+            setState(() {});
         }
-        if (dur.inHours > 0) {
-            return '${dur.inHours} hour${dur.inHours == 1 ? '' : 's'}'
-                ' ${dur.inMinutes.remainder(60).toString().padLeft(2, '0')}:'
-                '${dur.inSeconds.remainder(60).toString().padLeft(2, '0')}';
-        }
-        final minutes = dur.inMinutes.remainder(60).toString().padLeft(2, '0');
-        final seconds = dur.inSeconds.remainder(60).toString().padLeft(2, '0');
-        return '${isNegative ? '-' : ''}:$minutes:$seconds';
     }
 
-    int _extraDays() {
-        final now = DateTime.now();
-        final extra = _bin.expiresAt.difference(now).inDays;
-        return -extra;
-    }
+    Future<void> _pauseRental() async {
+        if (_currentRental == null) return;
+        if (_currentRental!.state != RentalState.active) return;
+        if (_currentRental!.isExpired) return; // cannot pause expired rental
 
-    Future<void> _onEdit() async {
-        final updated = await Navigator.push<BinItem>(
-            context,
-            MaterialPageRoute(
-                builder: (_) => BinCreationScreen(
-                    bin: _bin,
-                )
-            )
+        final remaining = _currentRental!.secondsLeft();
+        final updated = _currentRental!.copyWith(
+            startDate: null,
+            remainingSeconds: remaining > 0 ? remaining : 0,
+            state: RentalState.inactive
         );
 
-        if (updated != null) {
-            await binBox.put(widget.hiveKey, updated);
-            setState(() {
-                _bin = updated;
-            });
-            _updateRemainingTime();
-        }
+        await rentalsBox.put(_bin.currentRentalKey, updated);
+        setState(() {
+            _currentRental = updated;
+            _secondsLeft = updated.secondsLeft();
+        });
+        _timer?.cancel();
     }
 
-    Future<void> _onDelete() async {
+    Future<void> _resumeRental() async {
+        if (_currentRental == null) return;
+        if (_currentRental!.state != RentalState.inactive) return;
+
+        final updated = _currentRental!.copyWith(
+            startDate: DateTime.now(),
+            remainingSeconds: null,
+            state: RentalState.active
+        );
+
+        await rentalsBox.put(_bin.currentRentalKey, updated);
+        setState(() {
+            _currentRental = updated;
+            _secondsLeft = updated.secondsLeft();
+        });
+        _timer?.cancel();
+        _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    }
+
+    Future<void> _endRental() async {
+        if (_currentRental == null) return;
+
         final ok = await showDialog<bool>(
             context: context,
             builder: (c) => AlertDialog(
-                title: const Text('Delete Bin'),
-                content: Text('Delete bin ${_bin.id}? This cannot be undone.'),
+                title: const Text('End Rental'),
+                content: Text('End rental for bin ${_bin.id}? This cannot be undone.'),
                 actions: [
                     TextButton(
                         onPressed: () => Navigator.of(c).pop(false),
@@ -100,17 +145,148 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
                     ),
                     TextButton(
                         onPressed: () => Navigator.of(c).pop(true),
-                        child: const Text('Delete')
+                        child: const Text('End Rental')
                     )
                 ],
             )
         );
+        
+        if (ok != true) return;
 
-        if (ok == true) {
-            await binBox.delete(widget.hiveKey);
-            if (mounted) {
-                Navigator.of(context).pop(true);
-            }
+        final ended = _currentRental!.copyWith(
+            state: RentalState.completed,
+            endedAt: DateTime.now(),
+        );
+
+        final rentalKey = _bin.currentRentalKey!;
+        await rentalsBox.put(rentalKey, ended);
+
+        final history = (_bin.rentalHistory ?? [])..add(rentalKey);
+        final updatedBin = _bin.copyWith(
+            currentRentalKey: null,
+            rentalHistory: history,
+        );
+
+        await binsBox.put(widget.hiveKey, updatedBin);
+        
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            Navigator.of(context).pop(true);
+        }); // pop with true to indicate success
+    }
+
+    Future<void> _createRentalDialog() async {
+        final renterNameCtrl = TextEditingController();
+        final renterPhoneCtrl = TextEditingController();
+        RentalState initialState = RentalState.active;
+        final formKey = GlobalKey<FormState>();
+
+        try {
+            final result = await showDialog<bool>(
+                context: context,
+                builder: (c) => AlertDialog(
+                    title: const Text('Create Rental'),
+                    content: Form(
+                        key: formKey,
+                        child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                                TextFormField(
+                                    controller: renterNameCtrl,
+                                    decoration: const InputDecoration(labelText: 'Renter Name (optional)'),
+                                ),
+                                TextFormField(
+                                    controller: renterPhoneCtrl,
+                                    decoration: const InputDecoration(labelText: 'Renter Phone (optional)'),
+                                    keyboardType: TextInputType.phone,
+                                ),
+                                const SizedBox(height: 8),
+                                DropdownButtonFormField<RentalState>(
+                                    value: initialState,
+                                    items: const [
+                                        DropdownMenuItem(value: RentalState.active, child: Text('Active')),
+                                        DropdownMenuItem(value: RentalState.inactive, child: Text('Inactive')),
+                                    ],
+                                    onChanged: (value) {
+                                        if (value != null) {
+                                            initialState = value;
+                                        }
+                                    },
+                                    decoration: const InputDecoration(labelText: 'Rental State'),
+                                )
+                            ],
+                        )
+                    ),
+                    actions: [
+                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                        TextButton(
+                            onPressed: () {
+                                if (formKey.currentState?.validate() ?? true) {
+                                    Navigator.pop(context, true); 
+                                }
+                            },
+                            child: const Text('Create')
+                        ),
+                    ],
+                )
+            );
+
+            if (result != true) return;
+
+            final renterName = renterNameCtrl.text.trim();
+            final renterPhone = renterPhoneCtrl.text.trim();
+            
+            renterNameCtrl.dispose();
+            renterPhoneCtrl.dispose();
+
+            final now = DateTime.now();
+            final rental = RentalRecord(
+                renterName: renterName,
+                renterPhone: renterPhone,
+                startDate: initialState == RentalState.active ? now : null,
+                remainingSeconds: initialState == RentalState.inactive ? 10 * 24 * 3600 : null,
+                plannedSeconds: 10 * 24 * 3600,
+                state: initialState,
+            );
+
+            final rentalKey = await rentalsBox.add(rental);
+            final history = List<int>.from(_bin.rentalHistory ?? [])..add(rentalKey);
+            final updatedBin = _bin.copyWith(
+                currentRentalKey: rentalKey,
+                rentalHistory: history,
+            );
+            await binsBox.put(widget.hiveKey, updatedBin);
+
+            _loadData(); // reload data to reflect changes
+        } finally {
+            try { renterNameCtrl.dispose(); } catch (_) {}
+            try { renterPhoneCtrl.dispose(); } catch (_) {}
+        }
+    }
+    // int _extraDays() {
+    //     final now = DateTime.now();
+    //     final extra = _bin.expiresAt.difference(now).inDays;
+    //     return -extra;
+    // }
+
+    Future<void> _editBin() async {
+        final result = await Navigator.push<BinItem>(
+            context,
+            MaterialPageRoute(
+                builder: (_) => BinCreationScreen(
+                    bin: _bin,
+                    binKey: widget.hiveKey,
+                )
+            )
+        );
+
+        if (result != null) {
+            final updated = result.copyWith(
+                currentRentalKey: _bin.currentRentalKey,
+                rentalHistory: _bin.rentalHistory,
+            );
+            await binsBox.put(widget.hiveKey, updated);
+            _loadData();
         }
     }
 
@@ -119,25 +295,58 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
         _timer?.cancel();
         super.dispose();
     }
-    
+
+    // Future<void> _onDelete() async {
+    //     final ok = await showDialog<bool>(
+    //         context: context,
+    //         builder: (c) => AlertDialog(
+    //             title: const Text('Delete Bin'),
+    //             content: Text('Delete bin ${_bin.id}? This cannot be undone.'),
+    //             actions: [
+    //                 TextButton(
+    //                     onPressed: () => Navigator.of(c).pop(false),
+    //                     child: const Text('Cancel')
+    //                 ),
+    //                 TextButton(
+    //                     onPressed: () => Navigator.of(c).pop(true),
+    //                     child: const Text('Delete')
+    //                 )
+    //             ],
+    //         )
+    //     );
+
+    //     if (ok == true) {
+    //         await binBox.delete(widget.hiveKey);
+    //         if (mounted) {
+    //             Navigator.of(context).pop(true);
+    //         }
+    //     }
+    // }
+
     @override
     Widget build(BuildContext context) {
-        final expired = _remaining.isNegative;
-        final extraDays = _extraDays() > 0;
-        final statusText = expired 
-            ? 'Expired ${_formatDuration(_remaining)} ago'
-            : '${_formatDuration(_remaining)} left';
+        final hasRental = _currentRental != null;
+        final isActive = _currentRental?.state == RentalState.active;
+        final isInactive = _currentRental?.state == RentalState.inactive;
+        final expired = _currentRental?.isExpired ?? false;
+
+        final timerText = hasRental ? formatSeconds(_secondsLeft) : 'No active rental';
+        // final expired = _remaining.isNegative;
+        // final extraDays = _extraDays() > 0;
+        // final statusText = expired 
+        //     ? 'Expired ${_formatDuration(_remaining)} ago'
+        //     : '${_formatDuration(_remaining)} left';
         
-        final extraDaysText = extraDays 
-            ? 'Extra days: ${_extraDays()}'
-            : 'No extra days left';
+        // final extraDaysText = extraDays 
+        //     ? 'Extra days: ${_extraDays()}'
+        //     : 'There are no extra days';
 
         return Scaffold(
             appBar: AppBar(
                 title: Text('Bin ${_bin.id}'),
                 actions: [
-                    IconButton(icon: const Icon(Icons.edit), onPressed: _onEdit),
-                    IconButton(icon: const Icon(Icons.delete), onPressed: _onDelete),
+                    IconButton(icon: const Icon(Icons.edit), onPressed: _editBin),
+                    // IconButton(icon: const Icon(Icons.delete), onPressed: _onDelete),
                 ],
             ),
             body: Padding(
@@ -146,58 +355,118 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                         Row(children: [
-                            Icon(expired ? Icons.block : Icons.timer, color: expired ? Colors.red : Colors.green),
+                            Icon(
+                                hasRental ? (expired ? Icons.block : (isActive ? Icons.timer : Icons.pause_circle)) : Icons.inventory_2,
+                                color: hasRental ? (expired ? Colors.red : (isActive ? Colors.green : Colors.orange)) : Colors.grey,
+                                size: 28,
+                            ),
                             const SizedBox(width: 8),
-                            Text(expired ? 'Expired' : 'Active',
-                                style: Theme.of(context).textTheme.titleMedium),
+                            Text(
+                                hasRental ? (_currentRental!.renterName.isNotEmpty ? _currentRental!.renterName : 'Rented') : 'Free',
+                                style: Theme.of(context).textTheme.titleMedium,
+                            ),
                         ]),
                         const SizedBox(height: 16),
 
                         Text('ID: ${_bin.id}', style: Theme.of(context).textTheme.titleLarge),
                         const SizedBox(height: 8),
-                        Text(_bin.location.isEmpty ? 'Not assigned' : 'Location: ${_bin.location}'),
+                        Text('Location: ${_bin.location ?? '—'}'),
                         const SizedBox(height: 8),
-                        Text(_bin.contactName.isEmpty ? 'Not assigned' : 'Contact: ${_bin.contactName} (${_bin.contactPhone})'),
-                        const SizedBox(height: 8),
-                        Text('Placed: ${_bin.startDate.toLocal()}'),
-                        const SizedBox(height: 8),
-                        Text('Expires: ${_bin.expiresAt.toLocal()}'),
-                        const SizedBox(height: 24),
-
-                        Center(
-                            child: Column(
-                                children: [
-                                    Text(statusText,
-                                        style: TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                            color: expired ? Colors.red : Colors.green,
-                                        )),
-                                    const SizedBox(height: 16),
-                                    Text(extraDaysText,
-                                        style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: extraDays ? Colors.green.shade800 : Colors.black,
-                                            )),
-                                    const SizedBox(height: 300),
-                                    ElevatedButton.icon(
-                                        icon: const Icon(Icons.edit),
-                                        label: const Text('Edit Bin'),
-                                        onPressed: _onEdit,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    ElevatedButton.icon(
-                                        icon: const Icon(Icons.delete),
-                                        label: const Text('Delete Bin'),
-                                        style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
+                        if (!hasRental) ...[
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                                onPressed: _createRentalDialog,
+                                icon: const Icon(Icons.add),
+                                label: const Text('Create Rental'),
+                            )
+                        ] else ...[
+                            const SizedBox(height: 12),
+                            Text('Renter phone: ${_currentRental!.renterPhone.isNotEmpty ? _currentRental!.renterPhone : '—'}'),
+                            const SizedBox(height: 8),
+                            Text('Planned duration: ${(_currentRental!.plannedSeconds / 86400).round()} days'),
+                            const SizedBox(height: 12),
+                            Center(
+                                child: Column(
+                                    children: [
+                                        Text(
+                                            expired ? 'Expired ${timerText} ago' : timerText,
+                                            style: TextStyle(
+                                                fontSize: 28,
+                                                fontWeight: FontWeight.bold,
+                                                color: expired ? Colors.red : (isActive ? Colors.green : Colors.orange),
+                                            )
                                         ),
-                                        onPressed: _onDelete,
-                                    ),
-                                ],
-                            ),
-                        ),
+                                        const SizedBox(height: 12),
+                                        Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                                if (isActive && !expired)
+                                                    ElevatedButton.icon(
+                                                        onPressed: _pauseRental,
+                                                        icon: const Icon(Icons.pause),
+                                                        label: const Text('Pause Rental'),
+                                                    ),
+                                                if (isInactive)
+                                                    ElevatedButton.icon(
+                                                        onPressed: _resumeRental,
+                                                        icon: const Icon(Icons.play_arrow),
+                                                        label: const Text('Resume Rental'),
+                                                    ),
+                                                const SizedBox(width: 12),
+                                                ElevatedButton.icon(
+                                                    onPressed: _endRental,
+                                                    icon: const Icon(Icons.check),
+                                                    label: const Text('End Rental'),
+                                                    style: ElevatedButton.styleFrom(
+                                                        backgroundColor: Colors.red,
+                                                    ),
+                                                ),
+                                            ],
+                                        )
+                                    ]
+                                )
+                            )
+                        ]
+                        // const SizedBox(height: 8),
+                        // Text('Placed: ${_bin.startDate.toLocal()}'),
+                        // const SizedBox(height: 8),
+                        // Text('Expires: ${_bin.expiresAt.toLocal()}'),
+                        // const SizedBox(height: 24),
+
+                        // Center(
+                        //     child: Column(
+                        //         children: [
+                        //             Text(statusText,
+                        //                 style: TextStyle(
+                        //                     fontSize: 24,
+                        //                     fontWeight: FontWeight.bold,
+                        //                     color: expired ? Colors.red : Colors.green,
+                        //                 )),
+                        //             const SizedBox(height: 16),
+                        //             Text(extraDaysText,
+                        //                 style: TextStyle(
+                        //                     fontSize: 18,
+                        //                     fontWeight: FontWeight.bold,
+                        //                     color: extraDays ? Colors.green.shade800 : Colors.black,
+                        //                     )),
+                        //             const SizedBox(height: 300),
+                        //             ElevatedButton.icon(
+                        //                 icon: const Icon(Icons.edit),
+                        //                 label: const Text('Edit Bin'),
+                        //                 onPressed: _onEdit,
+                        //             ),
+                        //             const SizedBox(height: 8),
+                        //             ElevatedButton.icon(
+                        //                 icon: const Icon(Icons.delete),
+                        //                 label: const Text('Delete Bin'),
+                        //                 style: ElevatedButton.styleFrom(
+                        //                     backgroundColor: Colors.red,
+                        //                 ),
+                        //                 onPressed: _onDelete,
+                        //             ),
+                        //         ],
+                        //     ),
+                        // ),
                     ],
                 ),
             ),
