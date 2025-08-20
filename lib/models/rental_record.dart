@@ -10,7 +10,10 @@ enum RentalState {
   @HiveField(1)
   inactive,
   
-  @HiveField(2)
+  @HiveField(3)
+  paused,
+
+  @HiveField(4)
   completed,
 }
 
@@ -23,33 +26,38 @@ class RentalRecord {
   final String renterPhone;
 
   @HiveField(2)
-  final DateTime? startDate;
+  final String renterLoc;
 
   @HiveField(3)
-  final int? remainingSeconds;
+  final DateTime? startDate;
 
   @HiveField(4)
-  final int plannedSeconds;
+  final int? remainingSeconds;
 
   @HiveField(5)
-  final RentalState state;
+  final int plannedSeconds;
 
   @HiveField(6)
+  final RentalState state;
+
+  @HiveField(7)
   final DateTime? endedAt;
   
   RentalRecord({
     required this.renterName,
     required this.renterPhone,
+    required this.renterLoc,
     this.startDate,
     this.remainingSeconds,
     this.plannedSeconds = 10 * 24 * 3600, // Default to 10 days in seconds
-    this.state = RentalState.inactive,
+    this.state = RentalState.active,
     this.endedAt,
   });
 
   RentalRecord copyWith({
     String? renterName,
     String? renterPhone,
+    String? renterLoc,
     DateTime? startDate,
     int? remainingSeconds,
     int? plannedSeconds,
@@ -59,6 +67,7 @@ class RentalRecord {
     return RentalRecord(
       renterName: renterName ?? this.renterName,
       renterPhone: renterPhone ?? this.renterPhone,
+      renterLoc: renterLoc ?? this.renterLoc,
       startDate: startDate ?? this.startDate,
       remainingSeconds: remainingSeconds ?? this.remainingSeconds,
       plannedSeconds: plannedSeconds ?? this.plannedSeconds,
@@ -69,10 +78,10 @@ class RentalRecord {
 
   int secondsLeft() {
     if (state == RentalState.inactive) {
-      return remainingSeconds ?? plannedSeconds;
+      return 0;
     }
 
-    if (remainingSeconds != null) {
+    if (state == RentalState.paused && remainingSeconds != null) {
       return remainingSeconds!;
     }
 

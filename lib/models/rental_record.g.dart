@@ -19,31 +19,34 @@ class RentalRecordAdapter extends TypeAdapter<RentalRecord> {
     return RentalRecord(
       renterName: fields[0] as String,
       renterPhone: fields[1] as String,
-      startDate: fields[2] as DateTime?,
-      remainingSeconds: fields[3] as int?,
-      plannedSeconds: fields[4] as int,
-      state: fields[5] as RentalState,
-      endedAt: fields[6] as DateTime?,
+      renterLoc: fields[2] as String,
+      startDate: fields[3] as DateTime?,
+      remainingSeconds: fields[4] as int?,
+      plannedSeconds: fields[5] as int,
+      state: fields[6] as RentalState,
+      endedAt: fields[7] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, RentalRecord obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.renterName)
       ..writeByte(1)
       ..write(obj.renterPhone)
       ..writeByte(2)
-      ..write(obj.startDate)
+      ..write(obj.renterLoc)
       ..writeByte(3)
-      ..write(obj.remainingSeconds)
+      ..write(obj.startDate)
       ..writeByte(4)
-      ..write(obj.plannedSeconds)
+      ..write(obj.remainingSeconds)
       ..writeByte(5)
-      ..write(obj.state)
+      ..write(obj.plannedSeconds)
       ..writeByte(6)
+      ..write(obj.state)
+      ..writeByte(7)
       ..write(obj.endedAt);
   }
 
@@ -69,7 +72,9 @@ class RentalStateAdapter extends TypeAdapter<RentalState> {
         return RentalState.active;
       case 1:
         return RentalState.inactive;
-      case 2:
+      case 3:
+        return RentalState.paused;
+      case 4:
         return RentalState.completed;
       default:
         return RentalState.active;
@@ -85,8 +90,11 @@ class RentalStateAdapter extends TypeAdapter<RentalState> {
       case RentalState.inactive:
         writer.writeByte(1);
         break;
+      case RentalState.paused:
+        writer.writeByte(3);
+        break;
       case RentalState.completed:
-        writer.writeByte(2);
+        writer.writeByte(4);
         break;
     }
   }
