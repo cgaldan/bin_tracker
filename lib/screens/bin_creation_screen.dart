@@ -5,7 +5,7 @@ class BinCreationScreen extends StatefulWidget {
   final BinItem? bin;
   final int? binKey;
 
-  const BinCreationScreen({Key? key, this.bin, this.binKey}) : super(key: key);
+  const BinCreationScreen({super.key, this.bin, this.binKey});
 
   @override
   State<BinCreationScreen> createState() => _BinCreationScreenState();
@@ -15,22 +15,18 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
   final _formKey = GlobalKey<FormState>();
   
   final _idCtrl = TextEditingController();
-  final _locCtrl = TextEditingController();
-
 
   @override
   void initState() {
     super.initState();
     if (widget.bin != null) {
       _idCtrl.text = TextEditingController(text: widget.bin?.id ?? "").text;
-      _locCtrl.text = TextEditingController(text: widget.bin?.location ?? "").text;
     }
   }
 
   @override
   void dispose() {
     _idCtrl.dispose();
-    _locCtrl.dispose();
     super.dispose();
   }
 
@@ -38,18 +34,15 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final idText = _idCtrl.text.trim();
-    final locationText = _locCtrl.text.trim();
 
       BinItem result;
       if (widget.bin != null) {
         result = widget.bin!.copyWith(
           id: idText,
-          location: locationText.isNotEmpty ? locationText : null,
         );
       } else {
         result = BinItem(
           id: idText,
-          location: locationText.isNotEmpty ? locationText : null,
           currentRentalKey: null,
           rentalHistory: [],
         );
@@ -81,16 +74,6 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
                   ),
                 validator: (value) =>
                   (value == null || value.isEmpty) ? 'Please enter a bin ID' : null,
-              ),
-              const SizedBox(height: 12),
-
-              TextFormField(
-                controller: _locCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Location (Optional)',
-                  hintText: 'e.g. Ikarou 88',
-                  ),
-
               ),
               const SizedBox(height: 20),
 

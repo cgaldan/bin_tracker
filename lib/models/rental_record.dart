@@ -42,6 +42,9 @@ class RentalRecord {
 
   @HiveField(7)
   final DateTime? endedAt;
+
+  @HiveField(8)
+  final DateTime? pickedAt;
   
   RentalRecord({
     required this.renterName,
@@ -52,6 +55,7 @@ class RentalRecord {
     this.plannedSeconds = 10 * 24 * 3600, // Default to 10 days in seconds
     this.state = RentalState.active,
     this.endedAt,
+    this.pickedAt
   });
 
   RentalRecord copyWith({
@@ -63,6 +67,7 @@ class RentalRecord {
     int? plannedSeconds,
     RentalState? state,
     DateTime? endedAt,
+    DateTime? pickedAt
   }) {
     return RentalRecord(
       renterName: renterName ?? this.renterName,
@@ -73,6 +78,7 @@ class RentalRecord {
       plannedSeconds: plannedSeconds ?? this.plannedSeconds,
       state: state ?? this.state,
       endedAt: endedAt ?? this.endedAt,
+      pickedAt: pickedAt ?? this.pickedAt
     );
   }
 

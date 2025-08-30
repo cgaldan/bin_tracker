@@ -25,13 +25,14 @@ class RentalRecordAdapter extends TypeAdapter<RentalRecord> {
       plannedSeconds: fields[5] as int,
       state: fields[6] as RentalState,
       endedAt: fields[7] as DateTime?,
+      pickedAt: fields[8] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, RentalRecord obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.renterName)
       ..writeByte(1)
@@ -47,7 +48,9 @@ class RentalRecordAdapter extends TypeAdapter<RentalRecord> {
       ..writeByte(6)
       ..write(obj.state)
       ..writeByte(7)
-      ..write(obj.endedAt);
+      ..write(obj.endedAt)
+      ..writeByte(8)
+      ..write(obj.pickedAt);
   }
 
   @override

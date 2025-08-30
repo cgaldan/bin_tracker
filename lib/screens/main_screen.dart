@@ -91,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   leadingIcon = Icons.inventory_2;
                   iconColor = Colors.grey;
                 } else if (rental.state == RentalState.completed) {
-                  subtitle = 'Last renter: ${rental.renterName} (returned)';
+                  subtitle = 'Last renter: ${rental.renterName} (waiting to be picked up)';
                   leadingIcon = Icons.check_circle;
                   iconColor = Colors.blueGrey;
                 } else {
@@ -99,9 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   final timeText = formatSeconds(seconds);
                   final expired = rental.isExpired;
 
-                  subtitle = rental.renterName.isNotEmpty
-                      ? '${rental.renterName} · $timeText'
-                      : 'Rented · $timeText';
+                  subtitle = '${rental.renterName} · $timeText';
 
                   if (expired) {
                     leadingIcon = Icons.block;
@@ -109,6 +107,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   } else if (rental.state == RentalState.active) {
                     leadingIcon = Icons.timer;
                     iconColor = Colors.green;
+                  } else if (rental.state == RentalState.completed) {
+                    leadingIcon = Icons.check_circle;
+                    iconColor = Colors.blue;
                   } else {
                     leadingIcon = Icons.pause_circle;
                     iconColor = Colors.orange;
@@ -141,25 +142,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () async {
-                          final result = await Navigator.push<BinItem>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BinCreationScreen(bin: bin, binKey: binKey),
-                            ),
-                          );
+                      // IconButton(
+                      //   icon: Icon(Icons.edit),
+                      //   onPressed: () async {
+                      //     final result = await Navigator.push<BinItem>(
+                      //       context,
+                      //       MaterialPageRoute(
+                      //         builder: (_) => BinCreationScreen(bin: bin, binKey: binKey),
+                      //       ),
+                      //     );
 
-                          if (result != null) {
-                            final updated = result.copyWith(
-                              currentRentalKey: bin.currentRentalKey,
-                              rentalHistory: bin.rentalHistory,
-                            );
-                            await binsBox.put(binKey, updated);
-                          }
-                        },
-                      ),
+                      //     if (result != null) {
+                      //       final updated = result.copyWith(
+                      //         currentRentalKey: bin.currentRentalKey,
+                      //         rentalHistory: bin.rentalHistory,
+                      //       );
+                      //       await binsBox.put(binKey, updated);
+                      //     }
+                      //   },
+                      // ),
                       IconButton(
                         icon: Icon(Icons.delete),
                         onPressed: () => _deleteBin(binKey, bin),

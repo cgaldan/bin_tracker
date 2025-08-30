@@ -14,7 +14,7 @@ void main() async {
   Hive.registerAdapter(RentalRecordAdapter());
 
   await Hive.openBox<BinItem>('bins');
-  await Hive.openBox<RentalState>('rentalStates');
+  // await Hive.openBox<RentalState>('rentalStates');
   await Hive.openBox<RentalRecord>('rentals');
 
   runApp(const MyApp());
