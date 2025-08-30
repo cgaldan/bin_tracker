@@ -232,94 +232,86 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
         RentalState initialState = RentalState.active;
         final formKey = GlobalKey<FormState>();
 
-        try {
-            final result = await showDialog<bool>(
-                context: context,
-                builder: (c) => AlertDialog(
-                    title: const Text('Create Rental'),
-                    content: Form(
-                        key: formKey,
-                        child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                                TextFormField(
-                                    controller: renterNameCtrl,
-                                    decoration: const InputDecoration(labelText: 'Renter Name (optional)'),
-                                ),
-                                TextFormField(
-                                    controller: renterPhoneCtrl,
-                                    decoration: const InputDecoration(labelText: 'Renter Phone (optional)'),
-                                    keyboardType: TextInputType.phone,
-                                ),
-                                TextFormField(
-                                    controller: renterLocCtrl,
-                                    decoration: const InputDecoration(labelText: 'Renter Location (optional)'),
-                                ),
-                                const SizedBox(height: 8),
-                                DropdownButtonFormField<RentalState>(
-                                    initialValue: initialState,
-                                    items: const [
-                                        DropdownMenuItem(value: RentalState.active, child: Text('Active')),
-                                        DropdownMenuItem(value: RentalState.inactive, child: Text('Inactive')),
-                                    ],
-                                    onChanged: (value) {
-                                        if (value != null) {
-                                            initialState = value;
-                                        }
-                                    },
-                                    decoration: const InputDecoration(labelText: 'Rental State'),
-                                )
-                            ],
-                        )
+        
+        final result = await showDialog<bool>(
+            context: context,
+            builder: (c) => AlertDialog(
+                title: const Text('Create Rental'),
+                content: Form(
+                    key: formKey,
+                    child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                            TextFormField(
+                                controller: renterNameCtrl,
+                                decoration: const InputDecoration(labelText: 'Renter Name (optional)'),
+                            ),
+                            TextFormField(
+                                controller: renterPhoneCtrl,
+                                decoration: const InputDecoration(labelText: 'Renter Phone (optional)'),
+                                keyboardType: TextInputType.phone,
+                            ),
+                            TextFormField(
+                                controller: renterLocCtrl,
+                                decoration: const InputDecoration(labelText: 'Renter Location (optional)'),
+                            ),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<RentalState>(
+                                value: initialState,
+                                items: const [
+                                    DropdownMenuItem(value: RentalState.active, child: Text('Active')),
+                                    DropdownMenuItem(value: RentalState.inactive, child: Text('Inactive')),
+                                ],
+                                onChanged: (value) {
+                                    if (value != null) {
+                                        initialState = value;
+                                    }
+                                },
+                                decoration: const InputDecoration(labelText: 'Rental State'),
+                            )
+                        ],
+                    )
+                ),
+                actions: [
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                    TextButton(
+                        onPressed: () {
+                            if (formKey.currentState?.validate() ?? true) {
+                                Navigator.pop(context, true); 
+                            }
+                        },
+                        child: const Text('Create')
                     ),
-                    actions: [
-                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                        TextButton(
-                            onPressed: () {
-                                if (formKey.currentState?.validate() ?? true) {
-                                    Navigator.pop(context, true); 
-                                }
-                            },
-                            child: const Text('Create')
-                        ),
-                    ],
-                )
-            );
+                ],
+            )
+        );
 
-            if (result != true) return;
+        if (result != true) return;
 
-            final renterName = renterNameCtrl.text.trim();
-            final renterPhone = renterPhoneCtrl.text.trim();
-            final renterLoc = renterLocCtrl.text.trim();
-            
-            renterNameCtrl.dispose();
-            renterPhoneCtrl.dispose();
-            renterLocCtrl.dispose();
+        final renterName = renterNameCtrl.text.trim();
+        final renterPhone = renterPhoneCtrl.text.trim();
+        final renterLoc = renterLocCtrl.text.trim();
 
-            final now = DateTime.now();
-            final rental = RentalRecord(
-                renterName: renterName,
-                renterPhone: renterPhone,
-                renterLoc: renterLoc,
-                startDate: initialState == RentalState.active ? now : null,
-                remainingSeconds: initialState == RentalState.inactive ? 10 * 24 * 3600 : null,
-                plannedSeconds: 10 * 24 * 3600,
-                state: initialState,
-            );
+        final now = DateTime.now();
+        final rental = RentalRecord(
+            renterName: renterName,
+            renterPhone: renterPhone,
+            renterLoc: renterLoc,
+            startDate: initialState == RentalState.active ? now : null,
+            remainingSeconds: initialState == RentalState.inactive ? 10 * 24 * 3600 : null,
+            plannedSeconds: 10 * 24 * 3600,
+            state: initialState,
+        );
 
-            final rentalKey = await rentalsBox.add(rental);
-            final history = List<int>.from(_bin.rentalHistory ?? [])..add(rentalKey);
-            final updatedBin = _bin.copyWith(
-                currentRentalKey: rentalKey,
-                rentalHistory: history,
-            );
-            await binsBox.put(widget.hiveKey, updatedBin);
+        final rentalKey = await rentalsBox.add(rental);
+        final history = List<int>.from(_bin.rentalHistory ?? [])..add(rentalKey);
+        final updatedBin = _bin.copyWith(
+            currentRentalKey: rentalKey,
+            rentalHistory: history,
+        );
+        await binsBox.put(widget.hiveKey, updatedBin);
 
-            _loadData(); // reload data to reflect changes
-        } finally {
-            try { renterNameCtrl.dispose(); } catch (_) {}
-            try { renterPhoneCtrl.dispose(); } catch (_) {}
-        }
+        _loadData(); // reload data to reflect changes
     }
     // int _extraDays() {
     //     final now = DateTime.now();
