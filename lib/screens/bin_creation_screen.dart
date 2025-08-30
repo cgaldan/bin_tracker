@@ -13,7 +13,6 @@ class BinCreationScreen extends StatefulWidget {
 
 class _BinCreationScreenState extends State<BinCreationScreen> {
   final _formKey = GlobalKey<FormState>();
-  
   final _idCtrl = TextEditingController();
 
   @override
@@ -45,6 +44,7 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
           id: idText,
           currentRentalKey: null,
           rentalHistory: [],
+          state: BinState.free,
         );
       }
 

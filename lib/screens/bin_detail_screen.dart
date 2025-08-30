@@ -160,10 +160,9 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
         final rentalKey = _bin.currentRentalKey!;
         await rentalsBox.put(rentalKey, ended);
 
-        final history = List<int>.from(_bin.rentalHistory ?? [])..add(rentalKey);
+        // final history = List<int>.from(_bin.rentalHistory ?? [])..add(rentalKey);
         final updatedBin = _bin.copyWith(
-            currentRentalKey: null,
-            rentalHistory: history,
+            state: BinState.toBeReturned,
         );
 
         await binsBox.put(widget.hiveKey, updatedBin);
@@ -198,18 +197,13 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
         
         if (ok != true) return;
 
-        final completed = _currentRental!.copyWith(
-            state: RentalState.inactive,
-            pickedAt: DateTime.now(),
-        );
-
         final rentalKey = _bin.currentRentalKey!;
-        await rentalsBox.put(rentalKey, completed);
 
         final history = List<int>.from(_bin.rentalHistory ?? [])..add(rentalKey);
         final updatedBin = _bin.copyWith(
             currentRentalKey: null,
             rentalHistory: history,
+            state: BinState.free,
         );
 
         await binsBox.put(widget.hiveKey, updatedBin);

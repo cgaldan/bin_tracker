@@ -6,14 +6,11 @@ part 'rental_record.g.dart';
 enum RentalState {
   @HiveField(0)
   active,
-
-  @HiveField(1)
-  inactive,
   
-  @HiveField(3)
+  @HiveField(1)
   paused,
 
-  @HiveField(4)
+  @HiveField(2)
   completed,
 }
 
@@ -83,10 +80,6 @@ class RentalRecord {
   }
 
   int secondsLeft() {
-    if (state == RentalState.inactive) {
-      return 0;
-    }
-
     if (state == RentalState.paused && remainingSeconds != null) {
       return remainingSeconds!;
     }

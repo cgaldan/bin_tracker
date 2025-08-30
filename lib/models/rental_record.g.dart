@@ -74,10 +74,8 @@ class RentalStateAdapter extends TypeAdapter<RentalState> {
       case 0:
         return RentalState.active;
       case 1:
-        return RentalState.inactive;
-      case 3:
         return RentalState.paused;
-      case 4:
+      case 2:
         return RentalState.completed;
       default:
         return RentalState.active;
@@ -90,14 +88,11 @@ class RentalStateAdapter extends TypeAdapter<RentalState> {
       case RentalState.active:
         writer.writeByte(0);
         break;
-      case RentalState.inactive:
+      case RentalState.paused:
         writer.writeByte(1);
         break;
-      case RentalState.paused:
-        writer.writeByte(3);
-        break;
       case RentalState.completed:
-        writer.writeByte(4);
+        writer.writeByte(2);
         break;
     }
   }
