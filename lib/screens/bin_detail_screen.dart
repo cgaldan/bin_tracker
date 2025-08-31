@@ -254,7 +254,7 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
                                 value: initialState,
                                 items: const [
                                     DropdownMenuItem(value: RentalState.active, child: Text('Active')),
-                                    DropdownMenuItem(value: RentalState.inactive, child: Text('Inactive')),
+                                    DropdownMenuItem(value: RentalState.paused, child: Text('Inactive')),
                                 ],
                                 onChanged: (value) {
                                     if (value != null) {
@@ -292,7 +292,7 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
             renterPhone: renterPhone,
             renterLoc: renterLoc,
             startDate: initialState == RentalState.active ? now : null,
-            remainingSeconds: initialState == RentalState.inactive ? 10 * 24 * 3600 : null,
+            remainingSeconds: initialState == RentalState.paused ? 10 * 24 * 3600 : null,
             plannedSeconds: 10 * 24 * 3600,
             state: initialState,
         );
@@ -342,11 +342,11 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
 
     @override
     Widget build(BuildContext context) {
-        final hasRental = _currentRental != null;
-        final isActive = _currentRental?.state == RentalState.active;
-        final isPaused = _currentRental?.state == RentalState.paused;
+        final hasRental = _currentRental != null && _bin.state != BinState.free;
+        final rentalActive = _currentRental?.state == RentalState.active;
+        final rentalPaused = _currentRental?.state == RentalState.paused;
         final expired = _currentRental?.isExpired ?? false;
-        bool isCompleted = _currentRental?.state == RentalState.completed;
+        bool isCompleted = _currentRental?.state == RentalState.completed && _bin.state == BinState.toBeReturned;
 
         final timerText = hasRental ? formatSeconds(_secondsLeft) : 'No active rental';
         // final expired = _remaining.isNegative;
@@ -374,13 +374,34 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
                     children: [
                         Row(children: [
                             Icon(
-                                hasRental ? (expired ? Icons.block : (isActive ? Icons.timer : Icons.pause_circle)) : isCompleted ? Icons.check : Icons.inventory_2,
-                                color: hasRental ? (expired ? Colors.red : (isActive ? Colors.green : Colors.orange)) : isCompleted ? Colors.green : Colors.grey,
+                                switch (_bin.state) {
+                                    BinState.free =>
+                                        Icons.inventory_2,
+                                    BinState.active =>
+                                        expired ? Icons.block : (rentalActive ? Icons.timer : Icons.pause_circle),
+                                    BinState.toBeReturned =>
+                                        Icons.check,
+                                },
+                                color: switch (_bin.state) {
+                                    BinState.free =>
+                                        Colors.grey,
+                                    BinState.active =>
+                                        expired ? Colors.red : (rentalActive ? Colors.green : Colors.orange),
+                                    BinState.toBeReturned =>
+                                        Colors.yellow,
+                                },
                                 size: 28,
                             ),
                             const SizedBox(width: 8),
                             Text(
-                                hasRental ? (_currentRental!.renterName.isNotEmpty ? _currentRental!.renterName : 'Rented') : isCompleted ? 'Ready to be picked up' : 'Free',
+                                switch (_bin.state) {
+                                    BinState.free =>
+                                        'Free',
+                                    BinState.active =>
+                                        expired ? 'Expired' : (rentalActive ? 'Active' : 'Paused'),
+                                    BinState.toBeReturned =>
+                                        'Ready to be picked up',
+                                },
                                 style: Theme.of(context).textTheme.titleMedium,
                             ),
                         ]),
@@ -413,20 +434,20 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
                                             style: TextStyle(
                                                 fontSize: 28,
                                                 fontWeight: FontWeight.bold,
-                                                color: expired ? Colors.red : (isActive ? Colors.green : Colors.orange),
+                                                color: expired ? Colors.red : (rentalActive ? Colors.green : Colors.orange),
                                             )
                                         ),
                                         const SizedBox(height: 12),
                                         Row(
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
-                                                if (isActive)
+                                                if (rentalActive)
                                                     ElevatedButton.icon(
                                                         onPressed: _pauseRental,
                                                         icon: const Icon(Icons.pause),
                                                         label: const Text('Pause Rental'),
                                                     ),
-                                                if (isPaused)
+                                                if (rentalPaused)
                                                     ElevatedButton.icon(
                                                         onPressed: _resumeRental,
                                                         icon: const Icon(Icons.play_arrow),
@@ -442,7 +463,7 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
                                                         )
                                                     ),
                                                 const SizedBox(width: 12),
-                                                if (isActive && !isCompleted)
+                                                if (rentalActive && !isCompleted)
                                                     ElevatedButton.icon(
                                                         onPressed: _endRental,
                                                         icon: const Icon(Icons.check),
