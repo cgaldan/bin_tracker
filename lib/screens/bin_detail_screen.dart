@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../models/bin_model.dart';
 // import 'bin_creation_screen.dart';
 import '../models/rental_record.dart';

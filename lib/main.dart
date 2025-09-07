@@ -11,6 +11,7 @@ void main() async {
 
   Hive.registerAdapter(BinItemAdapter());
   Hive.registerAdapter(RentalStateAdapter());
+  Hive.registerAdapter(BinStateAdapter());
   Hive.registerAdapter(RentalRecordAdapter());
 
   await Hive.openBox<BinItem>('bins');

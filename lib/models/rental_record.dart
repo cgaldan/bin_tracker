@@ -2,7 +2,7 @@ import 'package:hive/hive.dart';
 
 part 'rental_record.g.dart';
 
-@HiveType(typeId: 1)
+@HiveType(typeId: 2)
 enum RentalState {
   @HiveField(0)
   active,
@@ -14,7 +14,7 @@ enum RentalState {
   completed,
 }
 
-@HiveType(typeId: 2)
+@HiveType(typeId: 3)
 class RentalRecord {
   @HiveField(0)
   final String renterName;

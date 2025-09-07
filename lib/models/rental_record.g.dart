@@ -8,7 +8,7 @@ part of 'rental_record.dart';
 
 class RentalRecordAdapter extends TypeAdapter<RentalRecord> {
   @override
-  final int typeId = 2;
+  final int typeId = 3;
 
   @override
   RentalRecord read(BinaryReader reader) {
@@ -66,7 +66,7 @@ class RentalRecordAdapter extends TypeAdapter<RentalRecord> {
 
 class RentalStateAdapter extends TypeAdapter<RentalState> {
   @override
-  final int typeId = 1;
+  final int typeId = 2;
 
   @override
   RentalState read(BinaryReader reader) {
