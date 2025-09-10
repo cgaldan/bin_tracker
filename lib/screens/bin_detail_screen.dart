@@ -43,9 +43,12 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
 
         if (_bin.currentRentalKey != null) {
             _currentRental = rentalsBox.get(_bin.currentRentalKey);
+            // print('Current rental: $_currentRental');
         } else {
             _currentRental = null;
         }
+
+        setState(() {});
 
         _updateRemainingTime();
         // _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -98,7 +101,7 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
         final remaining = _currentRental!.secondsLeft();
         final updated = _currentRental!.copyWith(
             startDate: null,
-            remainingSeconds: remaining > 0 ? remaining : 0,
+            remainingSeconds: remaining,
             state: RentalState.paused
         );
 
@@ -166,6 +169,8 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
         );
 
         await binsBox.put(widget.hiveKey, updatedBin);
+
+        // print('Ended rental for bin ${_bin.id}, rental state: ${ended.state}');
         
         WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
@@ -199,12 +204,17 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
 
         final rentalKey = _bin.currentRentalKey!;
 
+        // print('Before update: ${_bin.currentRentalKey}');
+        
         final history = List<int>.from(_bin.rentalHistory ?? [])..add(rentalKey);
-        final updatedBin = _bin.copyWith(
+        final updatedBin = BinItem(
+            id: _bin.id,
             currentRentalKey: null,
             rentalHistory: history,
             state: BinState.free,
         );
+
+        // print('After update: ${updatedBin.currentRentalKey}');
 
         await binsBox.put(widget.hiveKey, updatedBin);
         
@@ -302,8 +312,11 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
         final updatedBin = _bin.copyWith(
             currentRentalKey: rentalKey,
             rentalHistory: history,
+            state: BinState.active,            
         );
         await binsBox.put(widget.hiveKey, updatedBin);
+
+        // print('Created rental $rentalKey for bin ${_bin.id}');
 
         _loadData(); // reload data to reflect changes
     }
