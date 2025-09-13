@@ -30,7 +30,9 @@ class MyApp extends StatelessWidget {
       title: 'Bin Tracker',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 126, 14, 179)),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color.fromARGB(255, 126, 14, 179),
+        ),
         scaffoldBackgroundColor: const Color.fromARGB(255, 202, 197, 197),
       ),
       home: HomeScreen(),

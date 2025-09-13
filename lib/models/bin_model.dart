@@ -18,10 +18,10 @@ enum BinState {
 class BinItem {
   @HiveField(0)
   final String id;
-  
+
   @HiveField(1)
   final int? currentRentalKey;
-  
+
   @HiveField(2)
   final List<int>? rentalHistory;
 

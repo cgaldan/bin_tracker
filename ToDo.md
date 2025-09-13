@@ -11,6 +11,5 @@
 - Test timer in minus and extra day counting
 - Show some history (2 - 3 previous customers)
 
-# Smaller ToDos **(High Priority)
+# Smaller ToDos **(Low Priority)**
 - Time also showing in substring **(optional)**
-- Pause UI on hot reload

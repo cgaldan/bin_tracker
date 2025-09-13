@@ -6,7 +6,7 @@ part 'rental_record.g.dart';
 enum RentalState {
   @HiveField(0)
   active,
-  
+
   @HiveField(1)
   paused,
 
@@ -42,7 +42,7 @@ class RentalRecord {
 
   @HiveField(8)
   final DateTime? pickedAt;
-  
+
   RentalRecord({
     required this.renterName,
     required this.renterPhone,
@@ -52,7 +52,7 @@ class RentalRecord {
     this.plannedSeconds = 10 * 24 * 3600, // Default to 10 days in seconds
     this.state = RentalState.active,
     this.endedAt,
-    this.pickedAt
+    this.pickedAt,
   });
 
   RentalRecord copyWith({
@@ -64,7 +64,7 @@ class RentalRecord {
     int? plannedSeconds,
     RentalState? state,
     DateTime? endedAt,
-    DateTime? pickedAt
+    DateTime? pickedAt,
   }) {
     return RentalRecord(
       renterName: renterName ?? this.renterName,
@@ -75,7 +75,7 @@ class RentalRecord {
       plannedSeconds: plannedSeconds ?? this.plannedSeconds,
       state: state ?? this.state,
       endedAt: endedAt ?? this.endedAt,
-      pickedAt: pickedAt ?? this.pickedAt
+      pickedAt: pickedAt ?? this.pickedAt,
     );
   }
 
@@ -93,7 +93,7 @@ class RentalRecord {
   }
 
   bool get isExpired => (state == RentalState.active) && secondsLeft() <= 0;
-  
+
   DateTime? get expiresAt {
     if (startDate == null) return null;
     return startDate!.add(Duration(seconds: plannedSeconds));

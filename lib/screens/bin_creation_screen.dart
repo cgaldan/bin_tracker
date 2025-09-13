@@ -34,32 +34,27 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
 
     final idText = _idCtrl.text.trim();
 
-      BinItem result;
-      if (widget.bin != null) {
-        result = widget.bin!.copyWith(
-          id: idText,
-        );
-      } else {
-        result = BinItem(
-          id: idText,
-          currentRentalKey: null,
-          rentalHistory: [],
-          state: BinState.free,
-        );
-      }
-
-      if (!mounted) return;
-      Navigator.pop(context, result);
+    BinItem result;
+    if (widget.bin != null) {
+      result = widget.bin!.copyWith(id: idText);
+    } else {
+      result = BinItem(
+        id: idText,
+        currentRentalKey: null,
+        rentalHistory: [],
+        state: BinState.free,
+      );
     }
-  
+
+    if (!mounted) return;
+    Navigator.pop(context, result);
+  }
 
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.bin != null;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEdit ? 'Edit Bin' : 'Create Bin'),
-      ),
+      appBar: AppBar(title: Text(isEdit ? 'Edit Bin' : 'Create Bin')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -71,9 +66,10 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
                 decoration: InputDecoration(
                   labelText: 'Bin ID',
                   hintText: 'e.g. B123',
-                  ),
-                validator: (value) =>
-                  (value == null || value.isEmpty) ? 'Please enter a bin ID' : null,
+                ),
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'Please enter a bin ID'
+                    : null,
               ),
               const SizedBox(height: 20),
 
@@ -84,15 +80,14 @@ class _BinCreationScreenState extends State<BinCreationScreen> {
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Cancel'),
                   ),
-              ElevatedButton(
-                onPressed: _saveBin,
-                child: Text(isEdit ? 'Save Changes' : 'Create Bin'),
-              ),
-
+                  ElevatedButton(
+                    onPressed: _saveBin,
+                    child: Text(isEdit ? 'Save Changes' : 'Create Bin'),
+                  ),
                 ],
-              ),  
+              ),
             ],
-          ),          
+          ),
         ),
       ),
     );
