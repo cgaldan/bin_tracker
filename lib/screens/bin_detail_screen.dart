@@ -5,6 +5,7 @@ import '../models/bin_model.dart';
 // import 'bin_creation_screen.dart';
 import '../models/rental_record.dart';
 import '../utils/helpers.dart';
+import '../widgets/rental_history_widget.dart';
 
 class BinDetailScreen extends StatefulWidget {
   final BinItem bin;
@@ -403,10 +404,6 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
         : 'No active rental';
 
     final rentalHistory = _bin.rentalHistory ?? [];
-
-    final sortedHistory = rentalHistory.reversed.toList();
-
-    final limitedHistory = sortedHistory.take(3).toList();
     // final expired = _remaining.isNegative;
     // final extraDays = _extraDays() > 0;
     // final statusText = expired
@@ -546,6 +543,12 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
                 ),
               ),
             ],
+            const SizedBox(height: 16),
+            RentalHistoryWidget(
+              rentalHistory: rentalHistory,
+              rentalsBox: rentalsBox,
+              maxItems: 3,
+            ),
           ],
         ),
       ),
