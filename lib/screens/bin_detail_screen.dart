@@ -65,8 +65,7 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
 
     _secondsLeft = _currentRental!.secondsLeft();
 
-    if (_currentRental!.state == RentalState.active &&
-        !_currentRental!.isExpired) {
+    if (_currentRental!.state == RentalState.active) {
       _timer = Timer.periodic(const Duration(seconds: 1), (_) {
         _tick();
       });
@@ -128,8 +127,14 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
     if (_currentRental == null || _currentRental!.state != RentalState.paused)
       return;
 
+    // Calculate the start date that would give us the correct remaining time
+    final remaining = _currentRental!.remainingSeconds ?? 0;
+    final newStartDate = DateTime.now().subtract(
+      Duration(seconds: _currentRental!.plannedSeconds - remaining),
+    );
+
     final updated = _currentRental!.copyWith(
-      startDate: DateTime.now(),
+      startDate: newStartDate,
       remainingSeconds: null,
       state: RentalState.active,
     );
@@ -569,7 +574,7 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Planned duration: ${(_currentRental!.plannedSeconds / 86400).round()} days',
+                'Planned duration: ${formatPlannedDuration(_currentRental!.plannedSeconds)}',
               ),
               const SizedBox(height: 8),
               Center(

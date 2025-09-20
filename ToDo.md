@@ -4,11 +4,11 @@
 - Timer automations
 - History tab
 - Rental Description or notes field
-- Custom planned duration
+- Custom planned duration DONE
 
 # Must ToDos **(High Priority)**
 - Show extra days
-- Test timer in minus and extra day counting
+- Test timer in minus and extra day counting DONE
 - Show some history (2 - 3 previous customers) DONE
 
 # Smaller ToDos **(Low Priority)**

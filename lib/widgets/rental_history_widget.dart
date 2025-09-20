@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/rental_record.dart';
+import '../utils/helpers.dart';
 
 class RentalHistoryWidget extends StatelessWidget {
   final List<int> rentalHistory;
@@ -90,7 +91,7 @@ class _RentalHistoryCard extends StatelessWidget {
           ],
           const SizedBox(height: 4),
           Text(
-            'Duration: ${(rental.plannedSeconds / 86400).round()} days',
+            'Duration: ${formatPlannedDuration(rental.plannedSeconds)}',
             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
           if (rental.startDate != null) ...[
