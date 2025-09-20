@@ -17,12 +17,25 @@ class _HomeScreenState extends State<HomeScreen> {
   late Box<BinItem> binsBox;
   late Box<RentalRecord> rentalsBox;
   BinFilter selectedFilter = BinFilter.all;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     binsBox = Hive.box<BinItem>('bins');
     rentalsBox = Hive.box<RentalRecord>('rentals');
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   bool _matchesFilter(BinItem bin) {
@@ -46,6 +59,20 @@ class _HomeScreenState extends State<HomeScreen> {
       case BinFilter.paused:
         return rental != null && rental.state == RentalState.paused;
     }
+  }
+
+  bool _matchesSearch(BinItem bin) {
+    if (_searchQuery.isEmpty) return true;
+
+    final rental = bin.currentRentalKey != null
+        ? rentalsBox.get(bin.currentRentalKey)
+        : null;
+
+    if (rental == null) return false;
+
+    return rental.renterName.toLowerCase().contains(_searchQuery) ||
+        rental.renterPhone.toLowerCase().contains(_searchQuery) ||
+        rental.renterLoc.toLowerCase().contains(_searchQuery);
   }
 
   Future<void> _deleteBin(int binKey, BinItem bin) async {
@@ -110,6 +137,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 }).toList(),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search by name, location, or phone...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+            ),
+          ),
+        ),
       ),
       body: ValueListenableBuilder(
         valueListenable: binsBox.listenable(),
@@ -119,10 +172,10 @@ class _HomeScreenState extends State<HomeScreen> {
             return const Center(child: Text('No bins added yet.'));
           }
 
-          // Filter bins based on selected filter
+          // Filter bins based on selected filter and search query
           final filteredKeys = keys.where((binKey) {
             final bin = box.get(binKey)!;
-            return _matchesFilter(bin);
+            return _matchesFilter(bin) && _matchesSearch(bin);
           }).toList();
 
           if (filteredKeys.isEmpty) {
@@ -133,8 +186,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(Icons.filter_alt_off, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
-                    'No bins match the "${getFilterDisplayName(selectedFilter)}" filter',
+                    _searchQuery.isNotEmpty
+                        ? 'No bins found matching "$_searchQuery"'
+                        : 'No bins match the "${getFilterDisplayName(selectedFilter)}" filter',
                     style: TextStyle(color: Colors.grey[600]),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
