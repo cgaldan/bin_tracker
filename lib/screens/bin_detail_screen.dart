@@ -222,11 +222,11 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
 
     if (ok != true) return;
 
-    final rentalKey = _bin.currentRentalKey!;
+    // final rentalKey = _bin.currentRentalKey!;
 
     // print('Before update: ${_bin.currentRentalKey}');
 
-    final history = List<int>.from(_bin.rentalHistory ?? [])..add(rentalKey);
+    final history = List<int>.from(_bin.rentalHistory ?? []);
     final updatedBin = BinItem(
       id: _bin.id,
       currentRentalKey: null,
@@ -253,6 +253,9 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
     final renterNameCtrl = TextEditingController();
     final renterPhoneCtrl = TextEditingController();
     final renterLocCtrl = TextEditingController();
+    final daysCtrl = TextEditingController(text: '10');
+    final hoursCtrl = TextEditingController(text: '0');
+    final minutesCtrl = TextEditingController(text: '0');
     RentalState initialState = RentalState.active;
     final formKey = GlobalKey<FormState>();
 
@@ -262,49 +265,123 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
         title: const Text('Create Rental'),
         content: Form(
           key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: renterNameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Renter Name (optional)',
-                ),
-              ),
-              TextFormField(
-                controller: renterPhoneCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Renter Phone (optional)',
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              TextFormField(
-                controller: renterLocCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Renter Location (optional)',
-                ),
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<RentalState>(
-                value: initialState,
-                items: const [
-                  DropdownMenuItem(
-                    value: RentalState.active,
-                    child: Text('Active'),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: renterNameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Renter Name (optional)',
                   ),
-                  DropdownMenuItem(
-                    value: RentalState.paused,
-                    child: Text('Inactive'),
+                ),
+                TextFormField(
+                  controller: renterPhoneCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Renter Phone (optional)',
                   ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    initialState = value;
-                  }
-                },
-                decoration: const InputDecoration(labelText: 'Rental State'),
-              ),
-            ],
+                  keyboardType: TextInputType.phone,
+                ),
+                TextFormField(
+                  controller: renterLocCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Renter Location (optional)',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Rental Duration',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: daysCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Days',
+                          hintText: '10',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Required';
+                          }
+                          final days = int.tryParse(value);
+                          if (days == null || days < 0) {
+                            return 'Invalid';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        controller: hoursCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Hours',
+                          hintText: '0',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Required';
+                          }
+                          final hours = int.tryParse(value);
+                          if (hours == null || hours < 0 || hours > 23) {
+                            return '0-23';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        controller: minutesCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Minutes',
+                          hintText: '0',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Required';
+                          }
+                          final minutes = int.tryParse(value);
+                          if (minutes == null || minutes < 0 || minutes > 59) {
+                            return '0-59';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<RentalState>(
+                  value: initialState,
+                  items: const [
+                    DropdownMenuItem(
+                      value: RentalState.active,
+                      child: Text('Active'),
+                    ),
+                    DropdownMenuItem(
+                      value: RentalState.paused,
+                      child: Text('Inactive'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      initialState = value;
+                    }
+                  },
+                  decoration: const InputDecoration(labelText: 'Rental State'),
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -329,6 +406,12 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
     final renterName = renterNameCtrl.text.trim();
     final renterPhone = renterPhoneCtrl.text.trim();
     final renterLoc = renterLocCtrl.text.trim();
+    final days = int.parse(daysCtrl.text);
+    final hours = int.parse(hoursCtrl.text);
+    final minutes = int.parse(minutesCtrl.text);
+
+    // Calculate total duration in seconds
+    final totalSeconds = (days * 24 * 3600) + (hours * 3600) + (minutes * 60);
 
     final now = DateTime.now();
     final rental = RentalRecord(
@@ -337,9 +420,9 @@ class _BinDetailScreenState extends State<BinDetailScreen> {
       renterLoc: renterLoc,
       startDate: initialState == RentalState.active ? now : null,
       remainingSeconds: initialState == RentalState.paused
-          ? 10 * 24 * 3600
+          ? totalSeconds
           : null,
-      plannedSeconds: 10 * 24 * 3600,
+      plannedSeconds: totalSeconds,
       state: initialState,
     );
 
