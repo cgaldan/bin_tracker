@@ -1,3 +1,20 @@
+enum BinFilter { all, free, active, expired, paused }
+
+String getFilterDisplayName(BinFilter filter) {
+  switch (filter) {
+    case BinFilter.all:
+      return 'All';
+    case BinFilter.free:
+      return 'Free';
+    case BinFilter.active:
+      return 'Active';
+    case BinFilter.expired:
+      return 'Expired';
+    case BinFilter.paused:
+      return 'Paused';
+  }
+}
+
 String formatSeconds(int seconds) {
   final isNegative = seconds < 0;
   final dur = Duration(seconds: seconds.abs());

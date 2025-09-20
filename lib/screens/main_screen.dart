@@ -16,12 +16,36 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late Box<BinItem> binsBox;
   late Box<RentalRecord> rentalsBox;
+  BinFilter selectedFilter = BinFilter.all;
 
   @override
   void initState() {
     super.initState();
     binsBox = Hive.box<BinItem>('bins');
     rentalsBox = Hive.box<RentalRecord>('rentals');
+  }
+
+  bool _matchesFilter(BinItem bin) {
+    final rental = bin.currentRentalKey != null
+        ? rentalsBox.get(bin.currentRentalKey)
+        : null;
+
+    switch (selectedFilter) {
+      case BinFilter.all:
+        return true;
+      case BinFilter.free:
+        return rental == null;
+      case BinFilter.active:
+        return rental != null &&
+            rental.state == RentalState.active &&
+            !rental.isExpired;
+      case BinFilter.expired:
+        return rental != null &&
+            rental.state == RentalState.active &&
+            rental.isExpired;
+      case BinFilter.paused:
+        return rental != null && rental.state == RentalState.paused;
+    }
   }
 
   Future<void> _deleteBin(int binKey, BinItem bin) async {
@@ -60,7 +84,33 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Bin Tracker')),
+      appBar: AppBar(
+        title: const Text('Bin Tracker'),
+        actions: [
+          PopupMenuButton<BinFilter>(
+            icon: const Icon(Icons.filter_list),
+            onSelected: (BinFilter filter) {
+              setState(() {
+                selectedFilter = filter;
+              });
+            },
+            itemBuilder: (BuildContext context) =>
+                BinFilter.values.map((BinFilter filter) {
+                  return PopupMenuItem<BinFilter>(
+                    value: filter,
+                    child: Row(
+                      children: [
+                        if (selectedFilter == filter)
+                          const Icon(Icons.check, color: Colors.blue),
+                        const SizedBox(width: 8),
+                        Text(getFilterDisplayName(filter)),
+                      ],
+                    ),
+                  );
+                }).toList(),
+          ),
+        ],
+      ),
       body: ValueListenableBuilder(
         valueListenable: binsBox.listenable(),
         builder: (context, Box<BinItem> box, _) {
@@ -69,11 +119,33 @@ class _HomeScreenState extends State<HomeScreen> {
             return const Center(child: Text('No bins added yet.'));
           }
 
+          // Filter bins based on selected filter
+          final filteredKeys = keys.where((binKey) {
+            final bin = box.get(binKey)!;
+            return _matchesFilter(bin);
+          }).toList();
+
+          if (filteredKeys.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.filter_alt_off, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No bins match the "${getFilterDisplayName(selectedFilter)}" filter',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            );
+          }
+
           return ListView.separated(
-            itemCount: keys.length,
+            itemCount: filteredKeys.length,
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {
-              final binKey = keys[index];
+              final binKey = filteredKeys[index];
               final bin = box.get(binKey)!;
 
               final rental = bin.currentRentalKey != null
